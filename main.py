@@ -20,20 +20,19 @@ def expand_key(master_key):
 def round_function(data, subkey):
     L, R = data[:BLOCK_SIZE // 2], data[BLOCK_SIZE // 2:]
 
-    # Expansion
-    expanded = R + R[:BLOCK_SIZE // 4]  # Expand to 1.5 times the original size
+    # Non-linear mixing: bitwise rotation and XOR
+    rotated = bytes((b << 3 | b >> 5) & 0xFF for b in R)  # Rotate bits
+    mixed = bytes(a ^ b for a, b in zip(rotated, subkey))  # XOR with subkey
 
-    # Substitution and XOR with subkey
-    substituted = bytes(S_BOX[b ^ subkey[i % len(subkey)]] for i, b in enumerate(expanded))
+    # Substitution using S_BOX and modular arithmetic
+    substituted = bytes(S_BOX[b] for b in mixed)
+    mod_add = bytes((b + 33) % 256 for b in substituted)  # Modular addition
 
-    # Simple permutation (rotate bytes)
-    permuted = substituted[1:] + substituted[:1]
-
-    # Contraction
-    contracted = permuted[:BLOCK_SIZE // 2]
+    # Complex permutation
+    permuted = mod_add[1:] + mod_add[:1]
 
     # Final XOR with the left half
-    new_R = bytes([x ^ y for x, y in zip(contracted, L)])
+    new_R = bytes(x ^ y for x, y in zip(permuted, L))
     new_L = bytes([x ^ y for x, y in zip(L, R)])
     return new_L, new_R
 
