@@ -34,7 +34,8 @@ def round_function(data, subkey):
 
     # Final XOR with the left half
     new_R = bytes([x ^ y for x, y in zip(contracted, L)])
-    return R, new_R
+    new_L = bytes([x ^ y for x, y in zip(L, R)])
+    return new_L, new_R
 
 
 def encrypt(plaintext, key):
